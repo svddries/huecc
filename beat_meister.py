@@ -2,7 +2,8 @@
 import phue
 import time
 
-bridge = phue.Bridge(ip='192.168.178.49') # Enter bridge IP here.
+bridge = phue.Bridge(ip='192.168.178.49', username="2416b7e11a8a0f973722b31520319dab") # Enter bridge IP here.
+bridge.connect()
 
 light_name = 'Sfeerlamp Zithoek'
 # light_name = "Hanglamp Eetkamer"
