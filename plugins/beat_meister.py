@@ -5,8 +5,8 @@ import phue
 class BeatMeister:
 
     def __init__(self, bridge):
-        self.light_name = 'Sfeerlamp Zithoek'
-        # light_name = "Hanglamp Eetkamer"
+        # self.light_name = 'Sfeerlamp Zithoek'
+        self.light_name = "Hanglamp Eetkamer"
 
         self.bridge = bridge
         self.cycle_time = 0
