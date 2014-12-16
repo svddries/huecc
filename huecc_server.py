@@ -4,64 +4,15 @@ import time
 import BaseHTTPServer
 import json
 import phue
-import threading
+
+# Plugins
+from plugins.beat_meister import BeatMeister
 
 HOST_NAME = ''
 PORT_NUMBER = 8000
 
-global BEATMEISTER
-
-# ----------------------------------------------------------------------------------------------------
-
-class BeatMeister:
-
-    def __init__(self):
-        self.bridge = phue.Bridge(ip='192.168.178.49', username="2416b7e11a8a0f973722b31520319dab") # Enter bridge IP here.
-        self.bridge.connect()
-
-        self.light_name = 'Sfeerlamp Zithoek'
-        # light_name = "Hanglamp Eetkamer"
-
-        self.cycle_time = 0
-
-    def run(self):
-        t_start = time.time()
-
-        self.stopped = False
-
-        # hue range : 0 - 65535
-        beat_hues = [ 0, 10000, 20000, 40000 ]
-
-        while not self.stopped:
-
-            if self.cycle_time == 0:
-                time.sleep(0.1)
-            else:   
-                beat = int((time.time() - t_start) / self.cycle_time) % 4    
-
-                self.bridge.set_light(light_id=self.light_name, parameter={
-                    "bri" : 254,
-                    "sat" : 254,
-                    "hue" : beat_hues[beat] 
-                }, transitiontime=0)
-
-                # Sleep until next beat
-                t_elapsed = time.time() - t_start
-                n = int(t_elapsed / self.cycle_time)
-                t_new = (n + 1) * self.cycle_time
-
-                sleep_time = t_new - t_elapsed
-                time.sleep(sleep_time)
-
-    def stop(self):
-        self.stopped = True
-
-    def set_bpm(self, bpm):
-        print "BeatMeister: setting bpm to {0}".format(bpm)
-        self.cycle_time = 60.0 / bpm
-
-    def disable(self):
-        self.cycle_time = 0
+PLUGINS = {}
+CURRENT_PLUGIN = None
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -91,30 +42,48 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         data = json.loads(data_string)
 
-        if data["type"] == "disco":
-            BEATMEISTER.set_bpm(data["bpm"])
-        else:
-            BEATMEISTER.disable()
+        try:
+            plugin_name = data["type"]
+
+            if plugin_name in PLUGINS.keys():
+                global CURRENT_PLUGIN
+                if CURRENT_PLUGIN:
+                    CURRENT_PLUGIN.stop()
+
+                CURRENT_PLUGIN = PLUGINS[plugin_name]
+                CURRENT_PLUGIN.set_data(data)
+                CURRENT_PLUGIN.start()
+            else:
+                print "Unknown plugin: " + plugin_name
+        except KeyError:
+            print "JSON request does not contain field 'type'."
 
 # ----------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
 
-    BEATMEISTER = BeatMeister()
+    # Connect to Philips Hue bridge
+    bridge = phue.Bridge(ip='192.168.178.49', username="2416b7e11a8a0f973722b31520319dab")
+    bridge.connect()
 
-    t = threading.Thread(target=BEATMEISTER.run)
-    t.start()
+    # Set plugins
+    PLUGINS = { "beat_meister" : BeatMeister(bridge) }
+    CURRENT_PLUGIN = None
 
+    # Create HTTP server
     server_class = BaseHTTPServer.HTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), MyHandler)
     print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
+    
+    # Run HTTP server
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
 
-    BEATMEISTER.stop()
-    t.join()
+    if CURRENT_PLUGIN:
+        CURRENT_PLUGIN.stop()
 
+    # Close HTTP server
     httpd.server_close()
     print time.asctime(), "Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER)

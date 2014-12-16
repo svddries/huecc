@@ -13,7 +13,7 @@ conn = httplib.HTTPConnection("localhost", 8000)
 
 # -------------------------------------------------------------
 
-data = { "type" : "disco", "bpm" : 124}
+data = { "type" : "beat_meister", "bpm" : 124}
 
 conn.request("POST", "/", json.dumps(data))
 r = conn.getresponse()
