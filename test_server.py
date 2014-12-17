@@ -29,7 +29,7 @@ print "Beats per minute: {0}".format(bpm)
 
 data = { "type" : "beat_meister", "bpm" : bpm}
 
-conn.request("POST", "/", json.dumps(data))
+conn.request("POST", "/", json.dumps(data), headers={'content-type':'application/json'})
 r = conn.getresponse()
 
 
