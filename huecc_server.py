@@ -63,7 +63,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 if __name__ == '__main__':
 
     # Connect to Philips Hue bridge
-    bridge = phue.Bridge(ip='192.168.178.49', username="2416b7e11a8a0f973722b31520319dab")
+    bridge = phue.Bridge(ip='192.168.178.12', username="2416b7e11a8a0f973722b31520319dab")
     bridge.connect()
 
     # Set plugins
